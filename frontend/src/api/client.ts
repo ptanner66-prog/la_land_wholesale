@@ -1,14 +1,23 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios'
 
 // Get base URL from localStorage, env var, or use default
-// Default port is 8001 to match the FastAPI server
+// In production (Railway), use relative URLs (empty string) to call same domain
+// In development, use localhost:8001
 const getBaseUrl = (): string => {
   if (typeof window !== 'undefined') {
-    return localStorage.getItem('api_base_url') || 
-           import.meta.env.VITE_API_BASE_URL || 
-           'http://127.0.0.1:8001'
+    // Check localStorage first (allows runtime override)
+    const stored = localStorage.getItem('api_base_url')
+    if (stored) return stored
+
+    // Use env var if set
+    const envUrl = import.meta.env.VITE_API_BASE_URL
+    if (envUrl) return envUrl
+
+    // Default: use relative URLs in production, localhost in dev
+    // Relative URLs work when frontend and backend are on same domain (Railway)
+    return import.meta.env.DEV ? 'http://127.0.0.1:8001' : ''
   }
-  return 'http://127.0.0.1:8001'
+  return ''
 }
 
 // Create axios instance
