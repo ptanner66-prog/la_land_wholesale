@@ -9,7 +9,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
-      <ThemeProvider defaultTheme="system" storageKey="la-land-theme">
+      <ThemeProvider defaultTheme="dark" storageKey="la-land-theme">
         <App />
         <Toaster />
       </ThemeProvider>

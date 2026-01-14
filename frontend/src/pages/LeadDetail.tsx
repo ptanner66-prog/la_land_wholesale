@@ -634,7 +634,7 @@ export function LeadDetail() {
                           height="100%"
                           frameBorder="0"
                           style={{ border: 0 }}
-                          src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyBpBdmEbx2dJ_-TfiWtGW4sbTqAVkZfDvE'}&q=${lead.latitude},${lead.longitude}&zoom=16&maptype=satellite`}
+                          src={import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? `https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${lead.latitude},${lead.longitude}&zoom=16&maptype=satellite` : ''}
                           allowFullScreen
                         />
                       </div>
