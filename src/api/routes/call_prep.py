@@ -18,8 +18,8 @@ from api.deps import get_db, get_readonly_db
 from core.logging_config import get_logger
 from core.models import Lead
 from core.address_utils import compute_display_location, compute_mailing_address, format_lead_location_summary
-from services.offer_helper import compute_offer_range, DEFAULT_DISCOUNT_LOW, DEFAULT_DISCOUNT_HIGH
-from services.call_script import generate_call_script
+from src.services.offer_helper import compute_offer_range, DEFAULT_DISCOUNT_LOW, DEFAULT_DISCOUNT_HIGH
+from src.services.call_script import generate_call_script
 
 router = APIRouter()
 LOGGER = get_logger(__name__)

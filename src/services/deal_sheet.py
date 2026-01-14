@@ -10,9 +10,9 @@ from sqlalchemy.orm import Session
 from core.logging_config import get_logger
 from core.models import Lead, DealSheet
 from core.utils import utcnow, ensure_aware, CircuitBreaker
-from services.comps import get_comps_service
-from services.offer_calculator import get_offer_calculator
-from services.timeline import TimelineService
+from src.services.comps import get_comps_service
+from src.services.offer_calculator import get_offer_calculator
+from src.services.timeline import TimelineService
 
 LOGGER = get_logger(__name__)
 

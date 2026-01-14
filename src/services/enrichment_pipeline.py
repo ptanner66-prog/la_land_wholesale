@@ -28,10 +28,10 @@ from core.config import get_settings
 from core.logging_config import get_logger
 from core.models import Lead, Parcel, Owner, Party
 from core.utils import utcnow
-from services.usps import verify_address, USPSVerificationResult
-from services.google_maps import geocode, GeocodeResult
-from services.propstream import get_propstream_service, PropStreamProperty, is_propstream_available
-from services.timeline import TimelineService
+from src.services.usps import verify_address, USPSVerificationResult
+from src.services.google_maps import geocode, GeocodeResult
+from src.services.propstream import get_propstream_service, PropStreamProperty, is_propstream_available
+from src.services.timeline import TimelineService
 
 LOGGER = get_logger(__name__)
 SETTINGS = get_settings()

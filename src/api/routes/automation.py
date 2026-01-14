@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from api.deps import get_db, get_readonly_db
 from core.logging_config import get_logger
-from services.background_jobs import (
+from src.services.background_jobs import (
     create_job, start_job, update_job_progress, 
     complete_job, fail_job, get_job_status
 )

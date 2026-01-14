@@ -119,7 +119,7 @@ async def list_available_parishes(
 
     # If no data in database, return default parishes from market config
     if not parishes or sum(len(p) for p in parishes.values()) == 0:
-        from services.market import MARKET_CONFIGS
+        from src.services.market import MARKET_CONFIGS
         default_parishes = {}
         for code, config in MARKET_CONFIGS.items():
             default_parishes[code] = [{

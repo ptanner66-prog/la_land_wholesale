@@ -9,13 +9,13 @@ from core.config import get_settings
 from core.logging_config import get_logger
 from core.models import Lead, PipelineStage
 from core.utils import utcnow
-from services.market import MarketService
-from services.timeline import TimelineService
-from services.followup import FollowupService
-from services.notification import NotificationService
-from services.locking import get_scheduler_lock_service
-from services.task_tracker import get_task_tracker
-from services.outreach_validator import get_outreach_validator
+from src.services.market import MarketService
+from src.services.timeline import TimelineService
+from src.services.followup import FollowupService
+from src.services.notification import NotificationService
+from src.services.locking import get_scheduler_lock_service
+from src.services.task_tracker import get_task_tracker
+from src.services.outreach_validator import get_outreach_validator
 
 LOGGER = get_logger(__name__)
 SETTINGS = get_settings()

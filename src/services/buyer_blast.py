@@ -9,11 +9,11 @@ from sqlalchemy.orm import Session
 from core.logging_config import get_logger
 from core.models import Buyer, Lead, BuyerDeal, BuyerDealStage, OutreachAttempt
 from core.utils import utcnow, generate_idempotency_key
-from services.buyer_match import BuyerMatchService, BuyerMatch
-from services.deal_sheet import DealSheetService, DealSheetContent
-from services.timeline import TimelineService
-from services.locking import get_send_lock_service
-from services.idempotency import get_idempotency_service
+from src.services.buyer_match import BuyerMatchService, BuyerMatch
+from src.services.deal_sheet import DealSheetService, DealSheetContent
+from src.services.timeline import TimelineService
+from src.services.locking import get_send_lock_service
+from src.services.idempotency import get_idempotency_service
 
 LOGGER = get_logger(__name__)
 

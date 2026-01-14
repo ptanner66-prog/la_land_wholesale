@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from api.deps import get_readonly_db
 from core.logging_config import get_logger
 from core.models import Lead, Owner, Parcel, PipelineStage
-from services.market import MarketService, MarketConfig
+from src.services.market import MarketService, MarketConfig
 
 router = APIRouter()
 LOGGER = get_logger(__name__)

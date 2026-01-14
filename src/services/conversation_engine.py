@@ -25,7 +25,7 @@ from core.logging_config import get_logger
 from core.models import Lead, Owner, OutreachAttempt, ReplyClassification, PipelineStage
 from core.utils import utcnow
 from llm.client import get_llm_client
-from services.timeline import TimelineService
+from src.services.timeline import TimelineService
 
 LOGGER = get_logger(__name__)
 SETTINGS = get_settings()

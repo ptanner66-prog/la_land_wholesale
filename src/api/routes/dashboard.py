@@ -29,10 +29,10 @@ from core.models import (
     PipelineStage, ReplyClassification, BuyerDealStage,
 )
 from core.utils import utcnow
-from services.buyer_match import get_buyer_match_service
-from services.deal_sheet import get_deal_sheet_service
-from services.enrichment_pipeline import get_enrichment_pipeline
-from services.contract_generator import get_contract_generator
+from src.services.buyer_match import get_buyer_match_service
+from src.services.deal_sheet import get_deal_sheet_service
+from src.services.enrichment_pipeline import get_enrichment_pipeline
+from src.services.contract_generator import get_contract_generator
 
 router = APIRouter()
 LOGGER = get_logger(__name__)

@@ -21,8 +21,8 @@ from core.config import get_settings
 from core.exceptions import ExternalServiceError, MissingCredentialsError, RateLimitError
 from core.logging_config import get_logger, log_external_call
 from core.utils import utcnow
-from services.cache import cached
-from services.retry import with_retry
+from src.services.cache import cached
+from src.services.retry import with_retry
 
 LOGGER = get_logger(__name__)
 SETTINGS = get_settings()

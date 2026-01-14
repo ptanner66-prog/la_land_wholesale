@@ -11,11 +11,11 @@ from core.config import get_settings
 from core.logging_config import get_logger
 from core.models import Lead, OutreachAttempt, PipelineStage, ReplyClassification
 from core.utils import utcnow
-from services.market import MarketService
-from services.timeline import TimelineService
-from services.idempotency import get_idempotency_service
-from services.locking import get_send_lock_service
-from services.outreach_validator import get_outreach_validator
+from src.services.market import MarketService
+from src.services.timeline import TimelineService
+from src.services.idempotency import get_idempotency_service
+from src.services.locking import get_send_lock_service
+from src.services.outreach_validator import get_outreach_validator
 
 LOGGER = get_logger(__name__)
 SETTINGS = get_settings()

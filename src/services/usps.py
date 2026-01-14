@@ -12,8 +12,8 @@ import httpx
 from core.config import get_settings
 from core.exceptions import MissingCredentialsError, USPSVerificationError
 from core.logging_config import get_logger, log_external_call
-from services.cache import cached, get_usps_cache
-from services.retry import with_retry
+from src.services.cache import cached, get_usps_cache
+from src.services.retry import with_retry
 
 LOGGER = get_logger(__name__)
 

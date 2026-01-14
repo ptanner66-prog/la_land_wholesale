@@ -20,7 +20,7 @@ from api.deps import get_db, get_readonly_db
 from core.active_market import require_active_market
 from core.logging_config import get_logger
 from core.models import Lead, PipelineStage, TimelineEvent
-from services.caller_sheet import get_caller_sheet_service
+from src.services.caller_sheet import get_caller_sheet_service
 
 router = APIRouter()
 LOGGER = get_logger(__name__)

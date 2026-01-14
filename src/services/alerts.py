@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from core.config import get_settings
 from core.logging_config import get_logger
 from core.models import Lead, PipelineStage
-from services.notification import get_notification_service
+from src.services.notification import get_notification_service
 
 LOGGER = get_logger(__name__)
 SETTINGS = get_settings()

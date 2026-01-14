@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Optional, TYPE_CHECKING
 
 from core.address_utils import compute_display_location, compute_mailing_address
-from services.offer_helper import compute_offer_range, OfferRange
+from src.services.offer_helper import compute_offer_range, OfferRange
 
 if TYPE_CHECKING:
     from core.models import Lead
