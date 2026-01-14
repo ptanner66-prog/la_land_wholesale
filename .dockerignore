@@ -1,0 +1,57 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs
+*.md
+docs/
+RAILWAY.md
+DEPLOYMENT_FIX.md
+FINAL_FIX_SUMMARY.md
+DO_THIS_NOW.md
+RAILWAY_BLACK_SCREEN_FIX.md
+
+# Local dev
+.env
+.env.local
+*.db
+*.db-shm
+*.db-wal
+la_land_wholesale.db*
+
+# Vercel (not needed for Railway)
+.vercel
+.vercelignore
+vercel.json
