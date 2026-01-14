@@ -206,7 +206,7 @@ async def get_task_status(
 async def get_sms_mode() -> Dict[str, Any]:
     """
     Get current SMS mode configuration.
-    
+
     Returns whether DRY_RUN is enabled and Twilio configuration status.
     """
     return {
@@ -216,3 +216,40 @@ async def get_sms_mode() -> Dict[str, Any]:
         "mode": "SIMULATED" if SETTINGS.dry_run else "LIVE",
         "warning": None if SETTINGS.dry_run else "LIVE MODE: Real SMS will be sent to real phone numbers!",
     }
+
+
+@router.get("/frontend-status")
+async def frontend_status() -> Dict[str, Any]:
+    """
+    Check if frontend is built and being served.
+    Useful for diagnosing deployment issues.
+    """
+    import os
+
+    # Check for frontend dist directory
+    app_dir = os.path.dirname(os.path.dirname(__file__))
+    frontend_dist = os.path.join(app_dir, "..", "frontend", "dist")
+    frontend_exists = os.path.exists(frontend_dist)
+
+    result = {
+        "frontend_built": frontend_exists,
+        "frontend_path": os.path.abspath(frontend_dist),
+        "environment": SETTINGS.environment,
+    }
+
+    if frontend_exists:
+        try:
+            files = os.listdir(frontend_dist)
+            assets_dir = os.path.join(frontend_dist, "assets")
+            result["files"] = files
+            result["index_html_exists"] = "index.html" in files
+            result["assets_exists"] = os.path.exists(assets_dir)
+            if os.path.exists(assets_dir):
+                result["asset_files"] = os.listdir(assets_dir)[:10]  # First 10 files
+        except Exception as e:
+            result["error"] = str(e)
+    else:
+        result["message"] = "Frontend not built - Node.js may not be available during Railway build"
+        result["fix"] = "Ensure nixpacks.toml is present and Railway has redeployed"
+
+    return result
