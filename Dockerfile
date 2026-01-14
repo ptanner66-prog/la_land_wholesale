@@ -29,11 +29,14 @@ COPY frontend/package.json frontend/package-lock.json* ./frontend/
 COPY . .
 
 # Make build script executable and run it
-# build.sh will handle: pip install, npm ci, npm build, alembic migrations
+# build.sh will handle: pip install, npm ci, npm build
 RUN chmod +x build.sh && ./build.sh
+
+# Make startup script executable
+RUN chmod +x start.sh
 
 # Expose port (Railway will set $PORT dynamically)
 EXPOSE 8000
 
-# Start command - Railway will inject $PORT
-CMD uvicorn src.api.app:app --host 0.0.0.0 --port ${PORT:-8000}
+# Start command - runs migrations then starts uvicorn
+CMD ["./start.sh"]

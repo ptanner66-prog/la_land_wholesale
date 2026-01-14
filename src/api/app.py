@@ -56,52 +56,20 @@ SETTINGS = get_settings()
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     Application lifespan handler.
-    
+
     Sets up logging, validates database, and logs startup/shutdown events.
+    Non-blocking startup - allows app to start even if database is not ready.
     """
     # Initialize logging based on config
     json_logging = SETTINGS.log_format == "json"
     setup_logging(level=SETTINGS.log_level, json_format=json_logging)
-    
-    # Validate database connection and tables
-    from core.db import validate_database, init_db
-    db_status = validate_database()
-    
-    if db_status["status"] == "error":
-        LOGGER.critical(
-            "DATABASE VALIDATION FAILED - Cannot start application",
-            extra={"extra_data": {"errors": db_status["errors"], "database_url": db_status["database_url"]}}
-        )
-        raise RuntimeError(f"Database validation failed: {db_status['errors']}")
-    
-    if db_status["status"] == "missing_tables":
-        LOGGER.warning(
-            "Missing database tables detected - attempting to create",
-            extra={"extra_data": {"missing": db_status["tables_missing"]}}
-        )
-        init_result = init_db(create_missing_only=True)
-        if init_result["status"] == "error":
-            LOGGER.critical(
-                "Failed to create missing tables",
-                extra={"extra_data": {"error": init_result.get("error")}}
-            )
-            raise RuntimeError(f"Failed to create missing tables: {init_result.get('error')}")
-        LOGGER.info(
-            "Database tables created successfully",
-            extra={"extra_data": {"created": init_result["tables_created"]}}
-        )
-    else:
-        LOGGER.info(
-            "Database validation passed",
-            extra={"extra_data": {"tables_found": len(db_status["tables_found"])}}
-        )
-    
+
     # Log DRY_RUN warning prominently
     if not SETTINGS.dry_run:
         LOGGER.warning("!!! LIVE MODE !!! DRY_RUN=false - Real SMS will be sent!")
     else:
         LOGGER.info("DRY_RUN mode enabled - No real SMS will be sent")
-    
+
     LOGGER.info(
         "API application starting",
         extra={"extra_data": {
@@ -111,6 +79,45 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             "database_url": SETTINGS.database_url,
         }}
     )
+
+    # Validate database connection and tables (non-blocking)
+    # App will start even if database is not ready - allows health checks to pass
+    try:
+        from core.db import validate_database, init_db
+        db_status = validate_database()
+
+        if db_status["status"] == "error":
+            LOGGER.error(
+                "Database validation failed - app will start without database",
+                extra={"extra_data": {"errors": db_status["errors"], "database_url": db_status["database_url"]}}
+            )
+        elif db_status["status"] == "missing_tables":
+            LOGGER.warning(
+                "Missing database tables detected - attempting to create",
+                extra={"extra_data": {"missing": db_status["tables_missing"]}}
+            )
+            try:
+                init_result = init_db(create_missing_only=True)
+                if init_result["status"] == "error":
+                    LOGGER.error(
+                        "Failed to create missing tables",
+                        extra={"extra_data": {"error": init_result.get("error")}}
+                    )
+                else:
+                    LOGGER.info(
+                        "Database tables created successfully",
+                        extra={"extra_data": {"created": init_result["tables_created"]}}
+                    )
+            except Exception as e:
+                LOGGER.error(f"Error creating database tables: {e}")
+        else:
+            LOGGER.info(
+                "Database validation passed",
+                extra={"extra_data": {"tables_found": len(db_status["tables_found"])}}
+            )
+    except Exception as e:
+        LOGGER.error(f"Database validation error during startup: {e} - app will start anyway")
+
     yield
     LOGGER.info("API application shutting down")
 

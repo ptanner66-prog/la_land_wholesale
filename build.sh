@@ -25,7 +25,7 @@ else
     echo "==> Node.js not found - skipping frontend build"
 fi
 
-echo "==> Running database migrations..."
-alembic upgrade head
+echo "==> Skipping database migrations during Docker build..."
+echo "    (Migrations will run at startup if DATABASE_URL is set)"
 
 echo "==> Build complete! Ready to start server."
