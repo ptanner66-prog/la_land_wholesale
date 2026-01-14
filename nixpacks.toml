@@ -1,8 +1,8 @@
 # Valid nixpacks configuration for Railway
-# Using correct Nix package names
+# Using generic nodejs package (stable)
 
 [phases.setup]
-nixPkgs = ["python311", "nodejs_20"]
+nixPkgs = ["python311", "nodejs"]
 
 [phases.install]
 cmds = ["chmod +x build.sh && ./build.sh"]
