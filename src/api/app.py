@@ -298,18 +298,12 @@ def create_app() -> FastAPI:
 
         @application.get("/{full_path:path}")
         async def serve_frontend(full_path: str):
-            """Catch-all route to serve React frontend for client-side routing."""
-            # Exclude API routes from frontend serving
-            api_prefixes = (
-                "health", "ingest/", "leads/", "outreach/", "owners/", "parcels/",
-                "scoring/", "metrics/", "config/", "markets/", "automation/",
-                "webhooks/", "twilio/", "buyers/", "dispo/", "dashboard/",
-                "active-market/", "caller/", "call-prep/", "conversations/",
-                "docs", "redoc", "openapi.json"
-            )
-            if full_path.startswith(api_prefixes):
-                return JSONResponse(status_code=404, content={"error": "not_found"})
+            """
+            Catch-all route to serve React frontend for client-side routing.
 
+            Note: API routes are registered BEFORE this catch-all, so FastAPI
+            will match them first. This only handles unmatched routes.
+            """
             # Check if file exists in dist
             file_path = os.path.join(frontend_dist, full_path)
             if os.path.isfile(file_path):
