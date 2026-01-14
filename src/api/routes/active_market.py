@@ -115,7 +115,11 @@ async def list_available_parishes(
 
     If no data exists, returns default parishes from market config.
     """
-    parishes = get_available_parishes(db, state)
+    try:
+        parishes = get_available_parishes(db, state)
+    except Exception as e:
+        LOGGER.error(f"Failed to get parishes from database: {e}")
+        parishes = {}
 
     # If no data in database, return default parishes from market config
     if not parishes or sum(len(p) for p in parishes.values()) == 0:
