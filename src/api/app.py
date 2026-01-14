@@ -285,8 +285,15 @@ def create_app() -> FastAPI:
         @application.get("/{full_path:path}")
         async def serve_frontend(full_path: str):
             """Catch-all route to serve React frontend for client-side routing."""
-            # If it's an API route, don't serve frontend
-            if full_path.startswith(("api/", "docs", "redoc", "openapi.json")):
+            # Exclude API routes from frontend serving
+            api_prefixes = (
+                "health", "ingest/", "leads/", "outreach/", "owners/", "parcels/",
+                "scoring/", "metrics/", "config/", "markets/", "automation/",
+                "webhooks/", "twilio/", "buyers/", "dispo/", "dashboard/",
+                "active-market/", "caller/", "call-prep/", "conversations/",
+                "docs", "redoc", "openapi.json"
+            )
+            if full_path.startswith(api_prefixes):
                 return JSONResponse(status_code=404, content={"error": "not_found"})
 
             # Check if file exists in dist
@@ -294,7 +301,7 @@ def create_app() -> FastAPI:
             if os.path.isfile(file_path):
                 return FileResponse(file_path)
 
-            # Default to index.html for client-side routing
+            # Default to index.html for client-side routing (including root "/")
             return FileResponse(os.path.join(frontend_dist, "index.html"))
 
         LOGGER.info(f"Serving frontend from {frontend_dist}")

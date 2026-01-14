@@ -17,7 +17,7 @@ LOGGER = get_logger(__name__)
 SETTINGS = get_settings()
 
 
-@router.get("/")
+@router.get("/health")
 async def health_check() -> Dict[str, Any]:
     """Basic health check - always returns OK."""
     try:
