@@ -12,7 +12,8 @@ from typing import Any, AsyncGenerator, Dict
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from core.config import get_settings
 from core.logging_config import get_logger, setup_logging
@@ -273,6 +274,32 @@ def create_app() -> FastAPI:
     
     # Conversations (Inbox threads derived from outreach)
     application.include_router(conversations.router, prefix="/conversations", tags=["Conversations"])
+
+    # -------------------------------------------------------------------------
+    # Serve Frontend Static Files (Production)
+    # -------------------------------------------------------------------------
+    frontend_dist = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist")
+    if os.path.exists(frontend_dist):
+        application.mount("/assets", StaticFiles(directory=os.path.join(frontend_dist, "assets")), name="assets")
+
+        @application.get("/{full_path:path}")
+        async def serve_frontend(full_path: str):
+            """Catch-all route to serve React frontend for client-side routing."""
+            # If it's an API route, don't serve frontend
+            if full_path.startswith(("api/", "docs", "redoc", "openapi.json")):
+                return JSONResponse(status_code=404, content={"error": "not_found"})
+
+            # Check if file exists in dist
+            file_path = os.path.join(frontend_dist, full_path)
+            if os.path.isfile(file_path):
+                return FileResponse(file_path)
+
+            # Default to index.html for client-side routing
+            return FileResponse(os.path.join(frontend_dist, "index.html"))
+
+        LOGGER.info(f"Serving frontend from {frontend_dist}")
+    else:
+        LOGGER.warning(f"Frontend dist folder not found at {frontend_dist} - API only mode")
 
     return application
 
