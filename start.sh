@@ -1,18 +1,18 @@
 #!/bin/bash
-# =============================================================================
-# Railway Startup Script - LA Land Wholesale
-# Runs database migrations if DATABASE_URL is set, then starts the app
-# =============================================================================
+set -e  # Exit on any error
 
 echo "==> Starting LA Land Wholesale..."
 
-# Run database migrations if DATABASE_URL is set
-if [ -n "$DATABASE_URL" ]; then
-    echo "==> DATABASE_URL detected, running migrations..."
-    alembic upgrade head || echo "WARNING: Migration failed, continuing anyway..."
+# ALWAYS run migrations - app has default database_url in config.py
+echo "==> Running database migrations..."
+alembic upgrade head
+
+if [ $? -eq 0 ]; then
+    echo "==> ✅ Migrations completed successfully"
 else
-    echo "==> No DATABASE_URL set, skipping migrations"
+    echo "==> ❌ ERROR: Migrations failed!"
+    exit 1
 fi
 
-echo "==> Starting uvicorn server..."
+echo "==> Starting uvicorn server on port ${PORT:-8000}..."
 exec uvicorn src.api.app:app --host 0.0.0.0 --port ${PORT:-8000}
