@@ -168,6 +168,33 @@ async def get_outreach_stats(
     return service.get_daily_stats(days=days, market_code=market)
 
 
+@router.post("/reply/{lead_id}")
+async def send_reply_to_lead(
+    lead_id: int,
+    message: str = Body(..., embed=True),
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """Send manual reply to a lead from the inbox."""
+    from domain.outreach import OutreachService
+    from core.models import Lead
+
+    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    service = OutreachService(db)
+    result = service.send_first_touch(lead_id, force=True, context="reply", message_body=message)
+
+    if result.success:
+        return {
+            "success": True,
+            "message_sid": result.twilio_sid,
+            "message": "Reply sent successfully"
+        }
+    else:
+        raise HTTPException(status_code=400, detail=result.error or "Failed to send reply")
+
+
 @router.post("/classify_reply")
 async def classify_reply(
     body: ClassifyReplyRequest,

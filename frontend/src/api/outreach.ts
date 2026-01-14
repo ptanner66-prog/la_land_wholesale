@@ -52,13 +52,21 @@ export async function sendToLead(
     context,
     force,
   };
-  
+
   // FIXED: Include user-selected message if provided
   if (messageBody) {
     body.message_body = messageBody;
   }
-  
+
   const response = await client.post<SendMessageResponse>(`/outreach/send/${leadId}`, body);
+  return response.data;
+}
+
+export async function sendReply(
+  leadId: number,
+  message: string
+): Promise<{ success: boolean; message_sid?: string; message: string }> {
+  const response = await client.post(`/outreach/reply/${leadId}`, { message });
   return response.data;
 }
 
@@ -104,6 +112,7 @@ export default {
   getOutreachAttempts,
   triggerOutreachBatch,
   sendToLead,
+  sendReply,
   getOutreachStatistics,
   classifyReply,
   generateMessage,
