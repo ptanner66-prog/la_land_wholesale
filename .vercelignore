@@ -1,0 +1,19 @@
+# Vercel - Frontend Only
+# Ignore Python backend files
+src/
+alembic/
+tests/
+scripts/
+*.db
+*.db-shm
+*.db-wal
+*.pyc
+__pycache__/
+.env
+.venv/
+venv/
+.pytest_cache/
+requirements.txt
+pyproject.toml
+alembic.ini
+docker-compose.yml

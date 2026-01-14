@@ -1,13 +1,15 @@
 {
+  "version": 2,
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
-  "framework": "vite",
   "installCommand": "cd frontend && npm install",
-  "devCommand": "cd frontend && npm run dev",
-  "rewrites": [
+  "routes": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
-  ]
+  ],
+  "github": {
+    "silent": true
+  }
 }
