@@ -1,15 +1,24 @@
 {
-  "version": 2,
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
-  "installCommand": "cd frontend && npm install",
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+    "version": 2,
+    "builds": [
+          {
+                  "src": "src/api/app.py",
+                  "use": "@vercel/python"
+          }
+    ],
+    "routes": [
+          {
+                  "src": "/(.*)",
+                  "dest": "src/api/app.py"
+          }
+    ],
+    "env": {
+          "DATABASE_URL": "@DATABASE_URL",
+          "ENVIRONMENT": "production",
+          "ANTHROPIC_API_KEY": "@ANTHROPIC_API_KEY",
+          "TWILIO_ACCOUNT_SID": "@TWILIO_ACCOUNT_SID",
+          "TWILIO_AUTH_TOKEN": "@TWILIO_AUTH_TOKEN",
+          "TWILIO_FROM_NUMBER": "@TWILIO_FROM_NUMBER",
+          "GOOGLE_MAPS_API_KEY": "@GOOGLE_MAPS_API_KEY"
     }
-  ],
-  "github": {
-    "silent": true
-  }
 }
