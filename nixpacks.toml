@@ -2,7 +2,7 @@
 # Using correct Nix package names
 
 [phases.setup]
-nixPkgs = ["python311", "nodejs-20_x"]
+nixPkgs = ["python311", "nodejs_20"]
 
 [phases.install]
 cmds = ["chmod +x build.sh && ./build.sh"]
