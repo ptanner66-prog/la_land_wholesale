@@ -161,15 +161,17 @@ export function Inbox() {
 
   const handleSendReply = async () => {
     if (!selectedThread || !replyText.trim()) return;
-    
+
     setIsSending(true);
     try {
-      // TODO: Implement send reply API
+      const { sendReply } = await import('@/api/outreach');
+      await sendReply(selectedThread.lead_id, replyText);
       toast({
-        title: 'Reply Queued',
-        description: 'Your reply will be sent shortly.',
+        title: 'Reply Sent',
+        description: 'Your message was sent successfully.',
       });
       setReplyText('');
+      loadConversations(); // Refresh
     } catch (error) {
       toast({
         title: 'Error',
