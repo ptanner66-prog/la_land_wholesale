@@ -1,0 +1,13 @@
+{
+  "name": "la-land-wholesale",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LA Land Wholesale - Full-stack application",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "scripts": {
+    "build": "echo 'Root package.json - triggers Node.js detection'"
+  }
+}
