@@ -1,0 +1,16 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_number": "1000012345",
+        "zoning_code": "A1",
+        "lot_sqft": 54450,
+        "inside_city": true,
+        "lot_acres": 1.25
+      },
+      "geometry": null
+    }
+  ]
+}

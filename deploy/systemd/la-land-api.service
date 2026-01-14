@@ -1,0 +1,35 @@
+[Unit]
+Description=LA Land Wholesale API Server
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=la_land
+Group=la_land
+WorkingDirectory=/opt/la_land_wholesale
+Environment=PYTHONPATH=/opt/la_land_wholesale/src
+EnvironmentFile=/opt/la_land_wholesale/.env
+
+ExecStart=/opt/la_land_wholesale/.venv/bin/uvicorn api.app:app \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --workers 4 \
+    --log-level info \
+    --access-log
+
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/la_land_wholesale/logs
+
+[Install]
+WantedBy=multi-user.target

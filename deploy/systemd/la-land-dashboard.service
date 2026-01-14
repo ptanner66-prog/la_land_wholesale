@@ -1,0 +1,35 @@
+[Unit]
+Description=LA Land Wholesale Streamlit Dashboard
+After=network.target la-land-api.service
+Requires=la-land-api.service
+
+[Service]
+Type=simple
+User=la_land
+Group=la_land
+WorkingDirectory=/opt/la_land_wholesale
+Environment=PYTHONPATH=/opt/la_land_wholesale/src
+EnvironmentFile=/opt/la_land_wholesale/.env
+
+ExecStart=/opt/la_land_wholesale/.venv/bin/streamlit run \
+    src/dashboard/streamlit_app.py \
+    --server.port 8501 \
+    --server.address 0.0.0.0 \
+    --server.headless true \
+    --browser.gatherUsageStats false
+
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/la_land_wholesale/logs
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,2 @@
+parcel_number,owner_name,mailing_address,phone,email,land_value,improvement_value,acreage,situs_address,situs_city,situs_state,situs_zip,parish
+1000012345,Jordan Smith,"123 Live Oak Dr, Baton Rouge, LA 70810",+12255551212,jordan@example.com,15000,2000,1.25,456 Cypress Ln,Baton Rouge,LA,70802,East Baton Rouge

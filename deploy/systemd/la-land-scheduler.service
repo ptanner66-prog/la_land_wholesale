@@ -1,0 +1,30 @@
+[Unit]
+Description=LA Land Wholesale Background Scheduler
+After=network.target postgresql.service la-land-api.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=la_land
+Group=la_land
+WorkingDirectory=/opt/la_land_wholesale
+Environment=PYTHONPATH=/opt/la_land_wholesale/src
+EnvironmentFile=/opt/la_land_wholesale/.env
+
+ExecStart=/opt/la_land_wholesale/.venv/bin/python -m scheduler.runner
+
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/la_land_wholesale/logs
+
+[Install]
+WantedBy=multi-user.target
