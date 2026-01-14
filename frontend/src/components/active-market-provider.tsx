@@ -53,17 +53,25 @@ export function ActiveMarketProvider({ children }: ActiveMarketProviderProps) {
           getActiveMarket(),
           getAvailableParishes(),
         ]);
-        
-        setActiveMarketState(market.active ? market : null);
+
         setParishesByState(parishes.parishes_by_state);
-        
-        // If no active market, show selector
+
+        // Auto-select LA/East Baton Rouge if no market active
         if (!market.active) {
-          setShowSelector(true);
+          console.log('No active market, auto-selecting LA/East Baton Rouge');
+          try {
+            await apiSetActiveMarket('LA', 'East Baton Rouge');
+            const updatedMarket = await getActiveMarket();
+            setActiveMarketState(updatedMarket.active ? updatedMarket : null);
+          } catch (e) {
+            console.error('Failed to auto-select market:', e);
+            setActiveMarketState(null);
+          }
+        } else {
+          setActiveMarketState(market);
         }
       } catch (error) {
         console.error('Failed to load active market:', error);
-        setShowSelector(true);
       } finally {
         setIsLoading(false);
       }
@@ -116,9 +124,9 @@ export function ActiveMarketProvider({ children }: ActiveMarketProviderProps) {
         summary,
       }}
     >
-      {/* Market Selection Modal - Blocks access if no market selected */}
-      <Dialog open={showSelector && !isLoading} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-lg" onPointerDownOutside={(e) => e.preventDefault()}>
+      {/* Market Selection Modal - Optional */}
+      <Dialog open={showSelector && !isLoading} onOpenChange={setShowSelector}>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5 text-primary" />
