@@ -248,6 +248,13 @@ def create_app() -> FastAPI:
     # Include Routers
     # -------------------------------------------------------------------------
     application.include_router(health.router, tags=["Health"])
+
+    # Add root health check (for Railway healthcheck - no dependencies)
+    @application.get("/health")
+    async def root_health_check():
+        """Lightweight health check for Railway - always returns OK."""
+        return {"status": "ok", "service": "lalandwholesale"}
+
     application.include_router(ingestion.router, prefix="/ingest", tags=["Ingestion"])
     application.include_router(leads.router, prefix="/leads", tags=["Leads"])
     application.include_router(outreach.router, prefix="/outreach", tags=["Outreach"])
