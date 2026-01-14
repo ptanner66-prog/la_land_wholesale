@@ -248,6 +248,13 @@ def create_app() -> FastAPI:
     # Include Routers
     # -------------------------------------------------------------------------
     application.include_router(health.router, tags=["Health"])
+
+    # Add root health check (for Railway healthcheck - no dependencies)
+    @application.get("/health")
+    async def root_health_check():
+        """Lightweight health check for Railway - always returns OK."""
+        return {"status": "ok", "service": "lalandwholesale"}
+
     application.include_router(ingestion.router, prefix="/ingest", tags=["Ingestion"])
     application.include_router(leads.router, prefix="/leads", tags=["Leads"])
     application.include_router(outreach.router, prefix="/outreach", tags=["Outreach"])
@@ -291,18 +298,12 @@ def create_app() -> FastAPI:
 
         @application.get("/{full_path:path}")
         async def serve_frontend(full_path: str):
-            """Catch-all route to serve React frontend for client-side routing."""
-            # Exclude API routes from frontend serving
-            api_prefixes = (
-                "health", "ingest/", "leads/", "outreach/", "owners/", "parcels/",
-                "scoring/", "metrics/", "config/", "markets/", "automation/",
-                "webhooks/", "twilio/", "buyers/", "dispo/", "dashboard/",
-                "active-market/", "caller/", "call-prep/", "conversations/",
-                "docs", "redoc", "openapi.json"
-            )
-            if full_path.startswith(api_prefixes):
-                return JSONResponse(status_code=404, content={"error": "not_found"})
+            """
+            Catch-all route to serve React frontend for client-side routing.
 
+            Note: API routes are registered BEFORE this catch-all, so FastAPI
+            will match them first. This only handles unmatched routes.
+            """
             # Check if file exists in dist
             file_path = os.path.join(frontend_dist, full_path)
             if os.path.isfile(file_path):
