@@ -35,9 +35,5 @@ RUN chmod +x build.sh && ./build.sh
 # Expose port (Railway will set $PORT dynamically)
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
-
 # Start command - Railway will inject $PORT
 CMD uvicorn src.api.app:app --host 0.0.0.0 --port ${PORT:-8000}
