@@ -112,11 +112,23 @@ async def list_available_parishes(
 ) -> Dict[str, Any]:
     """
     List all parishes/counties with lead data.
-    
-    Returns parishes grouped by state with lead counts.
+
+    If no data exists, returns default parishes from market config.
     """
     parishes = get_available_parishes(db, state)
-    
+
+    # If no data in database, return default parishes from market config
+    if not parishes or sum(len(p) for p in parishes.values()) == 0:
+        from services.market import MARKET_CONFIGS
+        default_parishes = {}
+        for code, config in MARKET_CONFIGS.items():
+            default_parishes[code] = [{
+                "parish": config.default_parish,
+                "lead_count": 0,
+                "parcel_count": 0,
+            }]
+        parishes = default_parishes
+
     return {
         "parishes_by_state": parishes,
         "total_states": len(parishes),
