@@ -861,6 +861,55 @@ async def get_analytics_summary(
         BuyerDeal.created_at >= since
     ).count()
     
+    # Calculate average time to response
+    avg_response_hours = None
+    try:
+        # Find outreach with a response: pair the first outbound send
+        # with the first inbound reply per lead, compute the delta.
+        from sqlalchemy import and_
+
+        outbound = (
+            db.query(
+                OutreachAttempt.lead_id,
+                func.min(OutreachAttempt.sent_at).label("first_sent"),
+            )
+            .filter(
+                OutreachAttempt.created_at >= since,
+                OutreachAttempt.sent_at.isnot(None),
+                OutreachAttempt.message_context != "reply",
+            )
+            .group_by(OutreachAttempt.lead_id)
+            .subquery()
+        )
+
+        inbound = (
+            db.query(
+                OutreachAttempt.lead_id,
+                func.min(OutreachAttempt.created_at).label("first_reply"),
+            )
+            .filter(
+                OutreachAttempt.created_at >= since,
+                OutreachAttempt.response_body.isnot(None),
+            )
+            .group_by(OutreachAttempt.lead_id)
+            .subquery()
+        )
+
+        from sqlalchemy.orm import aliased
+
+        pairs = (
+            db.query(outbound.c.first_sent, inbound.c.first_reply)
+            .join(inbound, outbound.c.lead_id == inbound.c.lead_id)
+            .filter(inbound.c.first_reply > outbound.c.first_sent)
+            .all()
+        )
+
+        if pairs:
+            deltas = [(r.first_reply - r.first_sent).total_seconds() / 3600 for r in pairs]
+            avg_response_hours = round(sum(deltas) / len(deltas), 1)
+    except Exception as e:
+        LOGGER.debug(f"Could not calculate avg response time: {e}")
+
     return AnalyticsSummary(
         period=f"{days} days",
         total_leads_created=total_leads,
@@ -869,7 +918,7 @@ async def get_analytics_summary(
         response_rate=round(response_rate, 1),
         hot_leads_generated=hot_leads_count,
         deals_created=deals_created,
-        avg_time_to_response_hours=None,  # TODO: Calculate this
+        avg_time_to_response_hours=avg_response_hours,
     )
 
 

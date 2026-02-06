@@ -15,10 +15,14 @@ src_path = Path(__file__).parent.parent / "src"
 if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
 
-# Set test environment
-os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
+# Set test environment — use the project DB file path to satisfy db validation
+_project_root = Path(__file__).parent.parent
+_test_db_path = _project_root / "la_land_wholesale.db"
+os.environ["DATABASE_URL"] = f"sqlite:///{_test_db_path}"
 os.environ.setdefault("DRY_RUN", "true")
 os.environ.setdefault("ENVIRONMENT", "test")
+os.environ.setdefault("JWT_SECRET_KEY", "test-secret-for-ci")
+os.environ.setdefault("ALLOWED_ORIGINS", "http://localhost:3000")
 
 from core.db import Base
 from core.models import Lead, Parcel, Owner, Party, OutreachAttempt

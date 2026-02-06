@@ -8,7 +8,7 @@ import pytest
 from sqlalchemy.orm import Session
 from httpx import AsyncClient
 
-from core.db import get_db_session
+from core.db import get_session
 from core.models import Lead, Party, Parcel, Owner
 
 

@@ -204,6 +204,49 @@ class Settings(BaseSettings):
     score_weight_lot_size: int = Field(default=10, alias="SCORE_WEIGHT_LOT_SIZE", ge=0, le=100)
 
     # -------------------------------------------------------------------------
+    # Authentication (JWT)
+    # -------------------------------------------------------------------------
+    jwt_secret_key: str = Field(
+        default="change-me-in-production-use-a-random-64-char-string",
+        alias="JWT_SECRET_KEY",
+        description="Secret key for JWT token signing. MUST be changed in production.",
+    )
+    jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
+    jwt_access_token_expire_minutes: int = Field(
+        default=15, alias="JWT_ACCESS_TOKEN_EXPIRE_MINUTES", ge=1
+    )
+    jwt_refresh_token_expire_days: int = Field(
+        default=7, alias="JWT_REFRESH_TOKEN_EXPIRE_DAYS", ge=1
+    )
+
+    # -------------------------------------------------------------------------
+    # CORS
+    # -------------------------------------------------------------------------
+    allowed_origins: str = Field(
+        default="http://localhost:3000,http://localhost:5173",
+        alias="ALLOWED_ORIGINS",
+        description="Comma-separated list of allowed CORS origins.",
+    )
+
+    # -------------------------------------------------------------------------
+    # Ingestion
+    # -------------------------------------------------------------------------
+    ingestion_data_dir: str = Field(
+        default="",
+        alias="INGESTION_DATA_DIR",
+        description="Allowed base directory for ingestion file paths. Empty uses PROJECT_ROOT/data.",
+    )
+
+    # -------------------------------------------------------------------------
+    # Comps
+    # -------------------------------------------------------------------------
+    comps_provider: str = Field(
+        default="manual",
+        alias="COMPS_PROVIDER",
+        description="Comps data provider: manual, public, or attom.",
+    )
+
+    # -------------------------------------------------------------------------
     # Application
     # -------------------------------------------------------------------------
     dry_run: bool = Field(default=True, alias="DRY_RUN")

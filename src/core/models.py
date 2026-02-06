@@ -18,13 +18,10 @@ from sqlalchemy import (
     Text,
     func,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 import enum
 
-
-class Base(DeclarativeBase):
-    """Base class for all models."""
-    pass
+from core.db import Base
 
 
 # =============================================================================
@@ -192,7 +189,6 @@ class Owner(Base):
 
     __table_args__ = (
         Index("ix_owner_market_tcpa", "market_code", "is_tcpa_safe"),
-        Index("ix_owner_opt_out", "opt_out"),
     )
 
 
@@ -667,6 +663,84 @@ class DealSheet(Base):
     lead: Mapped["Lead"] = relationship("Lead", back_populates="deal_sheet")
 
 
+# =============================================================================
+# User Model (Authentication)
+# =============================================================================
+
+
+class UserRole(str, enum.Enum):
+    """User roles for authorization."""
+    ADMIN = "admin"
+    USER = "user"
+
+
+class User(Base):
+    """Application user for authentication and authorization."""
+    __tablename__ = "user"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    role: Mapped[str] = mapped_column(String(20), default=UserRole.USER.value, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
+        "RefreshToken", back_populates="user", cascade="all, delete-orphan"
+    )
+
+
+class RefreshToken(Base):
+    """Server-side refresh token storage for revocation support."""
+    __tablename__ = "refresh_token"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"), nullable=False, index=True)
+    token_hash: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    user: Mapped["User"] = relationship("User", back_populates="refresh_tokens")
+
+
+# =============================================================================
+# ManualComp Model
+# =============================================================================
+
+
+class ManualComp(Base):
+    """Manually entered comparable sale for a parcel/market area."""
+    __tablename__ = "manual_comp"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    parcel_id: Mapped[Optional[int]] = mapped_column(ForeignKey("parcel.id"), nullable=True, index=True)
+
+    address: Mapped[str] = mapped_column(String(255), nullable=False)
+    sale_date: Mapped[str] = mapped_column(String(20), nullable=False)
+    sale_price: Mapped[float] = mapped_column(Float, nullable=False)
+    lot_size_acres: Mapped[float] = mapped_column(Float, nullable=False)
+    parish: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
+    market_code: Mapped[str] = mapped_column(String(2), default=MarketCode.LA.value, index=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
 __all__ = [
     "Base",
     "MarketCode",
@@ -675,6 +749,9 @@ __all__ = [
     "TaskStatus",
     "BuyerDealStage",
     "PropertyType",
+    "UserRole",
+    "User",
+    "RefreshToken",
     "Party",
     "Owner",
     "Parcel",
@@ -687,4 +764,5 @@ __all__ = [
     "Buyer",
     "BuyerDeal",
     "DealSheet",
+    "ManualComp",
 ]

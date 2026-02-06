@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -11,9 +11,11 @@ import {
   Send,
   UserCheck,
   MapPin,
+  LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LogoWithText } from '@/components/ui/logo';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NavItem {
   path: string;
@@ -84,6 +86,8 @@ const navGroups: NavGroup[] = [
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [openGroups, setOpenGroups] = useState<string[]>(
     navGroups.filter((g) => g.defaultOpen).map((g) => g.label)
   );
@@ -170,7 +174,20 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-border/40 p-4">
+      <div className="border-t border-border/40 p-4 space-y-2">
+        {user && (
+          <div className="text-xs text-muted-foreground truncate">{user.email}</div>
+        )}
+        <button
+          onClick={async () => {
+            await logout();
+            navigate('/login');
+          }}
+          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </button>
         <div className="text-xs text-muted-foreground">LA Land Wholesale v2.0</div>
       </div>
     </aside>

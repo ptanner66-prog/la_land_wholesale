@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator, Dict
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -25,15 +25,17 @@ from core.exceptions import (
     ConfigurationError,
     ValidationError,
 )
+from api.auth_deps import get_current_user
 from api.routes import (
-    health, 
-    ingestion, 
-    leads, 
-    outreach, 
-    owners, 
+    auth,
+    health,
+    ingestion,
+    leads,
+    outreach,
+    owners,
     parcels,
-    scoring, 
-    metrics, 
+    scoring,
+    metrics,
     config,
     automation,
     markets,
@@ -142,14 +144,15 @@ def create_app() -> FastAPI:
     )
 
     # -------------------------------------------------------------------------
-    # CORS Middleware
+    # CORS Middleware — environment-based origins
     # -------------------------------------------------------------------------
+    origins = [o.strip() for o in SETTINGS.allowed_origins.split(",") if o.strip()]
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Allow all origins for development
+        allow_origins=origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+        allow_headers=["Authorization", "Content-Type"],
     )
 
     # -------------------------------------------------------------------------
@@ -247,47 +250,42 @@ def create_app() -> FastAPI:
     # -------------------------------------------------------------------------
     # Include Routers
     # -------------------------------------------------------------------------
+
+    # Public routes (no auth required)
     application.include_router(health.router, tags=["Health"])
 
-    # Add root health check (for Railway healthcheck - no dependencies)
     @application.get("/health")
     async def root_health_check():
         """Lightweight health check for Railway - always returns OK."""
         return {"status": "ok", "service": "lalandwholesale"}
 
-    application.include_router(ingestion.router, prefix="/ingest", tags=["Ingestion"])
-    application.include_router(leads.router, prefix="/leads", tags=["Leads"])
-    application.include_router(outreach.router, prefix="/outreach", tags=["Outreach"])
-    application.include_router(owners.router, prefix="/owners", tags=["Owners"])
-    application.include_router(parcels.router, prefix="/parcels", tags=["Parcels"])
-    application.include_router(scoring.router, prefix="/scoring", tags=["Scoring"])
-    application.include_router(metrics.router, prefix="/metrics", tags=["Metrics"])
-    application.include_router(config.router, prefix="/config", tags=["Configuration"])
-    
-    # New routes for multi-market and automation
-    application.include_router(markets.router, prefix="/markets", tags=["Markets"])
-    application.include_router(automation.router, prefix="/automation", tags=["Automation"])
-    application.include_router(webhooks.router, prefix="/webhooks", tags=["Webhooks"])
+    # Auth routes (public — login/register)
+    application.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+
+    # Twilio webhooks (authenticated by Twilio signature, not JWT)
     application.include_router(twilio_webhooks.router, prefix="/twilio", tags=["Twilio"])
-    
-    # Buyer and disposition routes
-    application.include_router(buyers.router, prefix="/buyers", tags=["Buyers"])
-    application.include_router(dispositions.router, prefix="/dispo", tags=["Dispositions"])
-    
-    # Dashboard API
-    application.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
-    
-    # Active Market (area locking)
-    application.include_router(active_market.router, prefix="/active-market", tags=["Active Market"])
-    
-    # Caller Sheet (sales-call-first workflow)
-    application.include_router(caller.router, prefix="/caller", tags=["Caller"])
-    
-    # Call Prep Pack (everything needed to quote and close)
-    application.include_router(call_prep.router, prefix="/call-prep", tags=["Call Prep"])
-    
-    # Conversations (Inbox threads derived from outreach)
-    application.include_router(conversations.router, prefix="/conversations", tags=["Conversations"])
+
+    # Protected routes — require JWT authentication
+    auth_dep = [Depends(get_current_user)]
+
+    application.include_router(ingestion.router, prefix="/ingest", tags=["Ingestion"], dependencies=auth_dep)
+    application.include_router(leads.router, prefix="/leads", tags=["Leads"], dependencies=auth_dep)
+    application.include_router(outreach.router, prefix="/outreach", tags=["Outreach"], dependencies=auth_dep)
+    application.include_router(owners.router, prefix="/owners", tags=["Owners"], dependencies=auth_dep)
+    application.include_router(parcels.router, prefix="/parcels", tags=["Parcels"], dependencies=auth_dep)
+    application.include_router(scoring.router, prefix="/scoring", tags=["Scoring"], dependencies=auth_dep)
+    application.include_router(metrics.router, prefix="/metrics", tags=["Metrics"], dependencies=auth_dep)
+    application.include_router(config.router, prefix="/config", tags=["Configuration"], dependencies=auth_dep)
+    application.include_router(markets.router, prefix="/markets", tags=["Markets"], dependencies=auth_dep)
+    application.include_router(automation.router, prefix="/automation", tags=["Automation"], dependencies=auth_dep)
+    application.include_router(webhooks.router, prefix="/webhooks", tags=["Webhooks"], dependencies=auth_dep)
+    application.include_router(buyers.router, prefix="/buyers", tags=["Buyers"], dependencies=auth_dep)
+    application.include_router(dispositions.router, prefix="/dispo", tags=["Dispositions"], dependencies=auth_dep)
+    application.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"], dependencies=auth_dep)
+    application.include_router(active_market.router, prefix="/active-market", tags=["Active Market"], dependencies=auth_dep)
+    application.include_router(caller.router, prefix="/caller", tags=["Caller"], dependencies=auth_dep)
+    application.include_router(call_prep.router, prefix="/call-prep", tags=["Call Prep"], dependencies=auth_dep)
+    application.include_router(conversations.router, prefix="/conversations", tags=["Conversations"], dependencies=auth_dep)
 
     # -------------------------------------------------------------------------
     # Serve Frontend Static Files (Production)

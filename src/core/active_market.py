@@ -176,8 +176,16 @@ def get_parish_summary(session: Session, state: str, parish: str) -> Dict[str, A
         .scalar() or 0
     )
     
-    # Check if conveyance/sales data exists for comps
-    has_sales_data = False  # TODO: Check actual sales/conveyance table when implemented
+    # Check if manual comp data exists for this parish/market
+    from core.models import ManualComp
+    has_sales_data = (
+        db.query(func.count(ManualComp.id))
+        .filter(
+            ManualComp.market_code == state.upper(),
+            func.lower(ManualComp.parish) == parish.lower(),
+        )
+        .scalar() or 0
+    ) > 0
     
     return {
         "state": state.upper(),

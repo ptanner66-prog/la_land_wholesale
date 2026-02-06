@@ -215,6 +215,116 @@ async def generate_message(
     }
 
 
+class ReplyRequest(BaseModel):
+    """Request body for sending an inbox reply."""
+
+    lead_id: int = Field(..., description="Lead ID to reply to")
+    message: str = Field(..., min_length=1, max_length=1600, description="Reply message text")
+
+
+@router.post("/reply")
+async def send_reply(
+    body: ReplyRequest,
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """
+    Send an SMS reply from the inbox.
+
+    Validates TCPA compliance (DNC/opt-out) before sending.
+    Logs the attempt in outreach_attempt with direction context.
+    """
+    from core.models import Lead, OutreachAttempt, Owner
+    from services.timeline import TimelineService
+    from core.config import get_settings
+    import uuid
+
+    settings = get_settings()
+
+    lead = db.query(Lead).filter(Lead.id == body.lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    owner = lead.owner
+    if not owner:
+        raise HTTPException(status_code=400, detail="Lead has no owner record")
+
+    phone = owner.phone_primary
+    if not phone:
+        raise HTTPException(status_code=400, detail="Owner has no phone number")
+
+    # TCPA compliance checks
+    if owner.opt_out:
+        raise HTTPException(status_code=403, detail="Owner has opted out of messages")
+    if owner.is_dnr:
+        raise HTTPException(status_code=403, detail="Owner is on Do Not Contact list")
+
+    # Create outreach attempt record
+    attempt = OutreachAttempt(
+        lead_id=lead.id,
+        idempotency_key=f"reply-{uuid.uuid4().hex[:16]}",
+        channel="sms",
+        message_body=body.message,
+        message_context="reply",
+        status="pending",
+    )
+    db.add(attempt)
+    db.flush()
+
+    # Send via Twilio (or dry-run)
+    if settings.dry_run:
+        attempt.status = "sent"
+        attempt.result = "dry_run"
+        LOGGER.info(f"DRY RUN reply to lead {lead.id}: {body.message[:50]}...")
+    elif settings.is_twilio_enabled():
+        try:
+            from twilio.rest import Client as TwilioClient
+
+            client = TwilioClient(settings.twilio_account_sid, settings.twilio_auth_token)
+            from_number = settings.twilio_from_number or settings.twilio_messaging_service_sid
+
+            msg_kwargs = {"body": body.message, "to": phone}
+            if settings.twilio_messaging_service_sid:
+                msg_kwargs["messaging_service_sid"] = settings.twilio_messaging_service_sid
+            else:
+                msg_kwargs["from_"] = from_number
+
+            twilio_msg = client.messages.create(**msg_kwargs)
+            attempt.status = "sent"
+            attempt.result = "sent"
+            attempt.external_id = twilio_msg.sid
+            from core.utils import utcnow
+            attempt.sent_at = utcnow()
+            LOGGER.info(f"Reply sent to lead {lead.id}, SID: {twilio_msg.sid}")
+        except Exception as e:
+            attempt.status = "failed"
+            attempt.result = "failed"
+            attempt.error_message = str(e)
+            LOGGER.error(f"Twilio send failed for reply to lead {lead.id}: {e}")
+            raise HTTPException(status_code=502, detail=f"SMS send failed: {e}")
+    else:
+        attempt.status = "failed"
+        attempt.result = "no_provider"
+        attempt.error_message = "Twilio not configured"
+        raise HTTPException(status_code=503, detail="SMS provider not configured")
+
+    # Log to timeline
+    try:
+        timeline = TimelineService(db)
+        timeline.log_message_sent(lead.id, "sms", "reply", body.message)
+    except Exception:
+        pass  # Don't fail the reply if timeline logging fails
+
+    db.commit()
+
+    return {
+        "success": True,
+        "attempt_id": attempt.id,
+        "status": attempt.status,
+        "result": attempt.result,
+        "message": body.message,
+    }
+
+
 @router.get("/followup_due")
 async def get_followups_due(
     market: Optional[str] = Query(default=None, description="Filter by market code"),

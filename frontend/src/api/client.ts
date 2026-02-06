@@ -29,11 +29,14 @@ const client: AxiosInstance = axios.create({
   },
 })
 
-// Request interceptor
+// Request interceptor — attach JWT and update base URL
 client.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Update base URL in case it changed
     config.baseURL = getBaseUrl()
+    const token = localStorage.getItem('auth_access_token')
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
     return config
   },
   (error: AxiosError) => {
@@ -41,41 +44,48 @@ client.interceptors.request.use(
   }
 )
 
-// Response interceptor
+// Track if a token refresh is in progress to avoid loops
+let isRefreshing = false
+
+// Response interceptor — handle 401 with token refresh
 client.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
-    // Handle common errors
+  async (error: AxiosError) => {
     if (error.response) {
       const status = error.response.status
-      const data = error.response.data as Record<string, unknown>
-      
-      switch (status) {
-        case 401:
-          console.error('Unauthorized')
-          break
-        case 403:
-          console.error('Forbidden')
-          break
-        case 404:
-          console.error('Not found')
-          break
-        case 422:
-          console.error('Validation error:', data)
-          break
-        case 500:
-          console.error('Server error:', data)
-          break
-        case 503:
-          console.error('Service unavailable:', data)
-          break
+
+      // Auto-redirect to /login on 401 (except for auth endpoints)
+      if (status === 401 && !error.config?.url?.startsWith('/auth/')) {
+        if (!isRefreshing) {
+          isRefreshing = true
+          try {
+            const refreshToken = localStorage.getItem('auth_refresh_token')
+            if (refreshToken) {
+              const res = await client.post('/auth/refresh', { refresh_token: refreshToken })
+              localStorage.setItem('auth_access_token', res.data.access_token)
+              localStorage.setItem('auth_refresh_token', res.data.refresh_token)
+              isRefreshing = false
+              // Retry the original request
+              if (error.config) {
+                error.config.headers.Authorization = `Bearer ${res.data.access_token}`
+                return client(error.config)
+              }
+            }
+          } catch {
+            // Refresh failed — clear tokens and redirect
+            localStorage.removeItem('auth_access_token')
+            localStorage.removeItem('auth_refresh_token')
+            isRefreshing = false
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login'
+            }
+          }
+        }
       }
     } else if (error.request) {
       console.error('Network error - no response received')
-    } else {
-      console.error('Request error:', error.message)
     }
-    
+
     return Promise.reject(error)
   }
 )

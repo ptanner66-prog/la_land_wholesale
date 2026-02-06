@@ -104,3 +104,17 @@ export async function getConversationStats(market?: string): Promise<Conversatio
   return response.data;
 }
 
+/**
+ * Send a reply SMS to a lead from the inbox
+ */
+export async function sendReply(
+  leadId: number,
+  message: string,
+): Promise<{ success: boolean; attempt_id: number; status: string; result: string; message: string }> {
+  const response = await apiClient.post('/outreach/reply', {
+    lead_id: leadId,
+    message,
+  });
+  return response.data;
+}
+

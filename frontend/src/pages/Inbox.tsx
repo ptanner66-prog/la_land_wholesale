@@ -41,6 +41,7 @@ import {
   getConversationDetail,
   classifyConversation,
   getConversationStats,
+  sendReply,
   type ConversationThread,
   type ConversationDetail,
   type ConversationStats,
@@ -161,19 +162,44 @@ export function Inbox() {
 
   const handleSendReply = async () => {
     if (!selectedThread || !replyText.trim()) return;
-    
+
     setIsSending(true);
     try {
-      // TODO: Implement send reply API
+      const result = await sendReply(selectedThread.lead_id, replyText.trim());
+      if (result.success) {
+        toast({
+          title: 'Reply Sent',
+          description: result.result === 'dry_run' ? 'Sent (dry run mode)' : 'Message delivered',
+        });
+        // Append the sent message to the conversation without full reload
+        setSelectedThread((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            messages: [
+              ...prev.messages,
+              {
+                id: result.attempt_id,
+                direction: 'outbound' as const,
+                body: replyText.trim(),
+                sent_at: new Date().toISOString(),
+                status: result.status,
+                classification: null,
+              },
+            ],
+          };
+        });
+        setReplyText('');
+      }
+    } catch (error: unknown) {
+      const msg =
+        error && typeof error === 'object' && 'response' in error
+          ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+            'Failed to send reply'
+          : 'Failed to send reply';
       toast({
-        title: 'Reply Queued',
-        description: 'Your reply will be sent shortly.',
-      });
-      setReplyText('');
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to send reply',
+        title: 'Send Failed',
+        description: msg,
         variant: 'destructive',
       });
     } finally {

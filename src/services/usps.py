@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 import time
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 

@@ -1,17 +1,141 @@
-"""Disposition routes for deal sheets, call scripts, and AI tools."""
+"""Disposition routes for deal sheets, call scripts, AI tools, and manual comps."""
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from api.deps import get_db, get_readonly_db
 from core.logging_config import get_logger
+from core.models import ManualComp
 
 router = APIRouter()
 LOGGER = get_logger(__name__)
+
+
+# =============================================================================
+# Manual Comp Models
+# =============================================================================
+
+
+class ManualCompCreate(BaseModel):
+    """Request body for creating a manual comp."""
+
+    parcel_id: Optional[int] = None
+    address: str = Field(..., min_length=1)
+    sale_date: str = Field(..., min_length=1, description="ISO date string, e.g. 2025-06-15")
+    sale_price: float = Field(..., gt=0)
+    lot_size_acres: float = Field(..., gt=0)
+    parish: Optional[str] = None
+    market_code: str = "LA"
+    notes: Optional[str] = None
+
+
+class ManualCompResponse(BaseModel):
+    """Response body for a manual comp."""
+
+    id: int
+    parcel_id: Optional[int]
+    address: str
+    sale_date: str
+    sale_price: float
+    lot_size_acres: float
+    price_per_acre: float
+    parish: Optional[str]
+    market_code: str
+    notes: Optional[str]
+
+
+# =============================================================================
+# Manual Comp Routes
+# =============================================================================
+
+
+@router.get("/comps/manual")
+async def list_manual_comps(
+    parish: Optional[str] = Query(None),
+    market: Optional[str] = Query(None),
+    parcel_id: Optional[int] = Query(None),
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_readonly_db),
+) -> Dict[str, Any]:
+    """List manual comps with optional filters."""
+    query = db.query(ManualComp)
+    if parish:
+        query = query.filter(ManualComp.parish == parish)
+    if market:
+        query = query.filter(ManualComp.market_code == market)
+    if parcel_id:
+        query = query.filter(ManualComp.parcel_id == parcel_id)
+
+    results = query.order_by(ManualComp.sale_date.desc()).limit(limit).all()
+
+    return {
+        "total": len(results),
+        "comps": [
+            {
+                "id": c.id,
+                "parcel_id": c.parcel_id,
+                "address": c.address,
+                "sale_date": c.sale_date,
+                "sale_price": c.sale_price,
+                "lot_size_acres": c.lot_size_acres,
+                "price_per_acre": round(c.sale_price / c.lot_size_acres, 2) if c.lot_size_acres > 0 else 0,
+                "parish": c.parish,
+                "market_code": c.market_code,
+                "notes": c.notes,
+            }
+            for c in results
+        ],
+    }
+
+
+@router.post("/comps/manual", status_code=201)
+async def create_manual_comp(
+    body: ManualCompCreate,
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """Add a manual comparable sale."""
+    comp = ManualComp(
+        parcel_id=body.parcel_id,
+        address=body.address,
+        sale_date=body.sale_date,
+        sale_price=body.sale_price,
+        lot_size_acres=body.lot_size_acres,
+        parish=body.parish,
+        market_code=body.market_code,
+        notes=body.notes,
+    )
+    db.add(comp)
+    db.flush()
+
+    LOGGER.info(f"Manual comp created: {comp.address} @ ${comp.sale_price:,.0f}")
+
+    return {
+        "id": comp.id,
+        "address": comp.address,
+        "sale_date": comp.sale_date,
+        "sale_price": comp.sale_price,
+        "lot_size_acres": comp.lot_size_acres,
+        "price_per_acre": round(comp.sale_price / comp.lot_size_acres, 2) if comp.lot_size_acres > 0 else 0,
+        "parish": comp.parish,
+        "market_code": comp.market_code,
+    }
+
+
+@router.delete("/comps/manual/{comp_id}")
+async def delete_manual_comp(
+    comp_id: int,
+    db: Session = Depends(get_db),
+) -> Dict[str, str]:
+    """Delete a manual comp."""
+    comp = db.query(ManualComp).filter(ManualComp.id == comp_id).first()
+    if not comp:
+        raise HTTPException(status_code=404, detail="Comp not found")
+    db.delete(comp)
+    return {"message": "Comp deleted"}
 
 
 # =============================================================================
